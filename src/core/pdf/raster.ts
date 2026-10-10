@@ -16,6 +16,7 @@ export const rasterPdfEngine: PdfEngine = {
       let pdf: jsPDF | undefined
       for (const [i, doc] of docs.entries()) {
         const sections = await renderDocx(doc, container)
+        void container.offsetHeight // force layout so the fonts the page needs start loading before we wait for them
         await document.fonts.ready
         for (const section of sections) {
           signal?.throwIfAborted()
