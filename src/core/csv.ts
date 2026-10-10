@@ -5,6 +5,14 @@ export type CsvTable = { columns: string[]; rows: string[][] }
 export type Mapping = Record<string, string | null>
 export type CsvRow = { number: number; values: Record<string, string>; problems: string[] }
 
+const SIGNATURES = [[0x50, 0x4b, 0x03, 0x04], [0xd0, 0xcf, 0x11, 0xe0]] // ZIP (.xlsx, .ods), OLE (.xls)
+
+/** A spreadsheet workbook dropped instead of a CSV gets a how-to-save message; a CSV gets null. */
+export function spreadsheetError(fileName: string, bytes: Uint8Array): string | null {
+  const workbook = /\.(xlsx?|ods)$/i.test(fileName) || SIGNATURES.some((sig) => sig.every((b, i) => bytes[i] === b))
+  return workbook ? 'Сохраните таблицу в формате CSV: Файл → Сохранить как → CSV UTF-8' : null
+}
+
 export function decodeCsv(bytes: Uint8Array): string {
   try {
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes)

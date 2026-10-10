@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { autoMap, buildRows, decodeCsv, parseCsv } from './csv'
+import { autoMap, buildRows, decodeCsv, parseCsv, spreadsheetError } from './csv'
 import { defaultLabel } from './fields'
 import { SAMPLE_FIELDS, sampleCsv } from './testing/samples'
 
@@ -64,4 +64,15 @@ it('an unmapped constructor field without a shared value is empty, not a functio
   const s = { fields: ['constructor'], labels: { constructor: 'constructor' }, optional: [] }
   const rows = buildRows({ columns: ['a'], rows: [['1']] }, { constructor: null }, {}, s)
   expect(rows[0]).toEqual({ number: 1, values: { constructor: '' }, problems: ['Не заполнено: constructor'] })
+})
+it('rejects spreadsheet workbooks by extension or by ZIP/OLE signature', () => {
+  const message = 'Сохраните таблицу в формате CSV: Файл → Сохранить как → CSV UTF-8'
+  const text = new TextEncoder().encode('a;b\r\n1;2\r\n')
+  expect(spreadsheetError('list.xlsx', text)).toBe(message)
+  expect(spreadsheetError('LIST.XLS', text)).toBe(message)
+  expect(spreadsheetError('list.ods', text)).toBe(message)
+  expect(spreadsheetError('list.csv', Uint8Array.from([0x50, 0x4b, 0x03, 0x04, 0x14]))).toBe(message)
+  expect(spreadsheetError('list.csv', Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1]))).toBe(message)
+  expect(spreadsheetError('list.csv', sampleCsv())).toBeNull()
+  expect(spreadsheetError('PK.csv', new TextEncoder().encode('PK;name\r\n1;x\r\n'))).toBeNull()
 })

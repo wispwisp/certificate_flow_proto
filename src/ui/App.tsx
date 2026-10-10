@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { autoMap, buildRows, decodeCsv, parseCsv, type CsvTable, type Mapping } from '../core/csv'
+import { autoMap, buildRows, decodeCsv, parseCsv, spreadsheetError, type CsvTable, type Mapping } from '../core/csv'
 import { createDemoTemplate, demoCsvBytes } from '../core/demo'
 import { DEFAULT_PATTERN } from '../core/fileName'
 import { prepareValues } from '../core/fields'
@@ -125,7 +125,10 @@ export default function App() {
     const tooBig = uploadSizeError(file.size)
     if (tooBig) return setCsvError(tooBig)
     try {
-      loadCsvBytes(new Uint8Array(await file.arrayBuffer()), file.name)
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      const workbook = spreadsheetError(file.name, bytes)
+      if (workbook) return setCsvError(workbook)
+      loadCsvBytes(bytes, file.name)
     } catch {
       setCsvError('Не удалось прочитать файл. Попробуйте выбрать его ещё раз.')
     }
