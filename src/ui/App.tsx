@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { autoMap, decodeCsv, parseCsv, type CsvTable, type Mapping } from '../core/csv'
 import { createDemoTemplate, demoCsvBytes } from '../core/demo'
 import { DEFAULT_PATTERN } from '../core/fileName'
 import { deleteTemplate, listTemplates, newTemplateRecord, putTemplate, type TemplateRecord } from '../core/storage'
 import { inspectTemplate, type TemplateInspection } from '../core/template'
-import { uploadSizeError } from '../core/zipGuard'
+import { checkZip, uploadSizeError } from '../core/zipGuard'
 import Header, { type Step } from './Header'
 import HowTo from './HowTo'
 import Sheet from './Sheet'
 import StepTemplate from './StepTemplate'
 
-export type Upload = { fileName: string; bytes?: Uint8Array; inspection?: TemplateInspection; error?: string }
+// `canPreview`: the file passed the ZIP guard, so the sheet may render it (tag errors included).
+export type Upload = { fileName: string; bytes?: Uint8Array; canPreview?: boolean; inspection?: TemplateInspection; error?: string }
 export type CsvState = { fileName: string; table: CsvTable }
 
 const HINTS: Record<Step, string> = {
@@ -70,14 +71,16 @@ export default function App() {
     if (/\.doc$/i.test(file.name)) {
       return setUpload({ fileName: file.name, error: 'Сохраните документ в формате .docx: Файл → Сохранить как → Документ Word' })
     }
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    const inspection = inspectTemplate(bytes)
-    // A template with errors is not shown on the sheet: it may not even be renderable.
-    setUpload({ fileName: file.name, bytes: inspection.errors.length ? undefined : bytes, inspection })
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      setUpload({ fileName: file.name, bytes, canPreview: checkZip(bytes) === null, inspection: inspectTemplate(bytes) })
+    } catch {
+      setUpload({ fileName: file.name, error: 'Не удалось прочитать файл. Попробуйте выбрать его ещё раз.' })
+    }
   }
 
   const saveUpload = async (name: string) => {
-    if (!upload?.bytes || !upload.inspection) return
+    if (!upload?.bytes || !upload.inspection || upload.inspection.errors.length) return
     const record = newTemplateRecord(name, upload.bytes, upload.inspection.fields)
     await putTemplate(record)
     setTemplates((all) => [...all, record])
@@ -85,15 +88,22 @@ export default function App() {
     setUpload(null)
   }
 
-  const addDemoTemplate = async () => {
-    const record = templates.find((t) => t.isDemo) ?? createDemoTemplate()
-    if (!templates.includes(record)) {
-      await putTemplate(record)
-      setTemplates((all) => [...all, record])
-    }
-    selectRecord(record)
-    setUpload(null)
-    return record
+  // The pending promise is shared, so quick repeated clicks cannot create two demo records.
+  const demoRequest = useRef<Promise<TemplateRecord> | null>(null)
+  const addDemoTemplate = () => {
+    demoRequest.current ??= (async () => {
+      const record = templates.find((t) => t.isDemo) ?? createDemoTemplate()
+      if (!templates.includes(record)) {
+        await putTemplate(record)
+        setTemplates((all) => [...all, record])
+      }
+      return record
+    })().finally(() => { demoRequest.current = null })
+    return demoRequest.current.then((record) => {
+      selectRecord(record)
+      setUpload(null)
+      return record
+    })
   }
 
   const loadCsvBytes = (bytes: Uint8Array, fileName: string, template = selected) => {
@@ -121,12 +131,13 @@ export default function App() {
   const canOpen = { 1: true, 2: selected !== null, 3: selected !== null && (mode === 'single' || csv !== null) }
 
   // Memoized: Sheet re-renders the document whenever the source changes identity.
-  const uploadBytes = upload?.bytes
+  const uploadBytes = upload?.canPreview ? upload.bytes : undefined
+  const reviewing = upload?.inspection !== undefined
   const source = useMemo(
-    () => uploadBytes
-      ? { bytes: uploadBytes, values: null }
+    () => reviewing
+      ? uploadBytes ? { bytes: uploadBytes, values: null } : null
       : selected ? { bytes: selected.bytes, values: step === 1 ? null : formValues } : null,
-    [uploadBytes, selected, step, formValues],
+    [reviewing, uploadBytes, selected, step, formValues],
   )
 
   if (showHelp) {
