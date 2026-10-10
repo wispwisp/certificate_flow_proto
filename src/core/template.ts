@@ -38,24 +38,10 @@ function describeError(error: TagError): string {
   return `«${partLabel(file)}»: …${near}… — ${EXPLANATIONS[id ?? ''] ?? 'ошибка в теге'}`
 }
 
-export function inspectTemplate(bytes: Uint8Array): TemplateInspection {
-  const result: TemplateInspection = { fields: [], warnings: [], errors: [] }
-  const zipError = checkZip(bytes)
-  if (zipError) return { ...result, errors: [zipError] }
-
-  let doc: Docxtemplater
-  const zip = new PizZip(bytes)
-  try {
-    doc = new Docxtemplater(zip, OPTIONS)
-  } catch (error) {
-    const tagErrors = (error as { properties?: { errors?: TagError[] } }).properties?.errors
-    result.errors = tagErrors
-      ? tagErrors.map(describeError)
-      : [`Не удалось разобрать шаблон: ${(error as Error).message}`]
-    return result
-  }
-
-  const names = (pattern: RegExp) => sortParts(zip.file(pattern).map((f) => f.name))
+function collectTags(doc: Docxtemplater, zip: PizZip): Pick<TemplateInspection, 'fields' | 'warnings'> {
+  const result = { fields: [] as string[], warnings: [] as string[] }
+  const compiled = Object.keys((doc as unknown as { compiled: object }).compiled)
+  const names = (pattern: RegExp) => sortParts(zip.file(pattern).map((f) => f.name).filter((n) => compiled.includes(n)))
   const parts = ['word/document.xml', ...names(/^word\/header[^/]*\.xml$/), ...names(/^word\/footer[^/]*\.xml$/)]
   const badTags = new Set<string>()
   for (const part of parts) {
@@ -72,6 +58,24 @@ export function inspectTemplate(bytes: Uint8Array): TemplateInspection {
     }
   }
   return result
+}
+
+export function inspectTemplate(bytes: Uint8Array): TemplateInspection {
+  const result: TemplateInspection = { fields: [], warnings: [], errors: [] }
+  const zipError = checkZip(bytes)
+  if (zipError) return { ...result, errors: [zipError] }
+
+  try {
+    const zip = new PizZip(bytes)
+    const doc = new Docxtemplater(zip, OPTIONS)
+    return { ...result, ...collectTags(doc, zip) }
+  } catch (error) {
+    const tagErrors = (error as { properties?: { errors?: TagError[] } }).properties?.errors
+    result.errors = tagErrors
+      ? tagErrors.map(describeError)
+      : [`Не удалось разобрать шаблон: ${(error as Error).message}`]
+    return result
+  }
 }
 
 export function fillTemplate(bytes: Uint8Array, values: Record<string, string>): Uint8Array {

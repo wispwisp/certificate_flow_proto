@@ -44,4 +44,16 @@ describe('template', () => {
     expect(docXml(out)).toContain('ТОО «А&amp;Б» &lt;отдел&gt;')
     expect(inspectTemplate(out).errors).toEqual([])
   })
+  it('ignores a header file that is not part of the document package', () => {
+    const zip = new PizZip(sampleDocx())
+    zip.file('word/header9.xml', '<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p/></w:hdr>')
+    expect(inspectTemplate(zip.generate({ type: 'uint8array' }))).toEqual({ fields: SAMPLE_FIELDS, warnings: [], errors: [] })
+  })
+  it('reports a ZIP with a valid directory but unreadable contents instead of throwing', () => {
+    const bytes = sampleDocx().slice()
+    bytes[0] = 0 // break the first local file header; the central directory stays intact
+    const r = inspectTemplate(bytes)
+    expect(r.fields).toEqual([])
+    expect(r.errors).toHaveLength(1)
+  })
 })
