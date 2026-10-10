@@ -328,3 +328,68 @@ button.next {
 .nav {
   justify-content: space-between;
 }
+
+.rows {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.rows th,
+.rows td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.rows tbody tr {
+  cursor: pointer;
+}
+
+.rows tr.selected {
+  background: #e3ecf8;
+}
+
+.rows td.bad {
+  color: #8a2a1d;
+}
+
+@page {
+  margin: 0;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .desk,
+  .desk * {
+    visibility: visible;
+  }
+
+  .app .workspace,
+  .desk,
+  .sheet,
+  .sheet .docx-wrapper {
+    display: block;
+    margin: 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    overflow: visible;
+    zoom: 1 !important;
+  }
+
+  .header,
+  .panel,
+  .sheet-error {
+    display: none;
+  }
+
+  .sheet .docx-wrapper > section.docx {
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
+  }
+}

@@ -10,6 +10,7 @@ import Header, { type Step } from './Header'
 import HowTo from './HowTo'
 import Sheet from './Sheet'
 import StepData from './StepData'
+import StepDocuments from './StepDocuments'
 import StepTemplate from './StepTemplate'
 
 // `canPreview`: the file passed the ZIP guard, so the sheet may render it (tag errors included).
@@ -137,9 +138,6 @@ export default function App() {
     setStep(1)
   }
 
-  // Read by step ③ (Task 9); referenced here so strict unused checks pass until then.
-  void [pattern, setPattern]
-
   const canOpen = { 1: true, 2: selected !== null, 3: selected !== null && (mode === 'single' || csv !== null) }
 
   // Memoized: Sheet re-renders the document whenever the source changes identity.
@@ -204,6 +202,19 @@ export default function App() {
               onBack={() => setStep(1)}
               onNext={() => setStep(3)}
             />
+          ) : step === 3 && selected ? (
+            <StepDocuments
+              template={selected}
+              mode={mode}
+              formValues={formValues}
+              rows={rows}
+              mapping={mapping}
+              pattern={pattern}
+              previewRow={previewRow}
+              onPattern={setPattern}
+              onPreviewRow={setPreviewRow}
+              onBack={() => setStep(2)}
+            />
           ) : (
             <StepPanel step={step} />
           )}
@@ -216,7 +227,7 @@ export default function App() {
   )
 }
 
-// Placeholder: Tasks 8-9 replace it with the step ② and ③ panels.
+// Fallback panel while no template is selected.
 function StepPanel(props: { step: Step }) {
   return <p className="hint">{HINTS[props.step]}</p>
 }
