@@ -24,7 +24,12 @@ function send(res, status, body = '', headers = {}) {
 }
 
 createServer(async (req, res) => {
-  const path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname)
+  let path
+  try {
+    path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname)
+  } catch {
+    return send(res, 400, 'Bad request')
+  }
   if (path === PREFIX.slice(0, -1)) return send(res, 301, '', { Location: PREFIX })
   if (!path.startsWith(PREFIX) || path.includes('..')) return send(res, 404, 'Not found')
 
