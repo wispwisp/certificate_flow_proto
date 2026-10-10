@@ -166,3 +166,147 @@ button {
     border-bottom: 1px solid var(--line);
   }
 }
+
+.step-template {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.primary:disabled {
+  background: #a7a49d;
+  border-color: #a7a49d;
+}
+
+button.big {
+  padding: 14px 20px;
+  font-size: 18px;
+}
+
+button.next {
+  align-self: flex-end;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.library {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.item.selected {
+  border-color: var(--accent);
+  background: #eef3fa;
+}
+
+.item .pick {
+  flex: 1 1 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dropzone {
+  padding: 24px 12px;
+  border: 2px dashed var(--line);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.dropzone.over {
+  border-color: var(--accent);
+  background: #eef3fa;
+}
+
+.message {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.message.error {
+  background: #fbe9e7;
+  color: #8a2a1d;
+}
+
+.message.warning {
+  background: #fff4d6;
+  color: #7a5200;
+}
+
+.review h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.panel button:not(.pick):not(.primary) {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.panel button.primary {
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.panel button.big {
+  padding: 14px 20px;
+}
+
+.found {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  font-size: 14px;
+}
