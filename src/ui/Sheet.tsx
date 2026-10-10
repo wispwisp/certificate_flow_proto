@@ -26,22 +26,30 @@ export default function Sheet({ source }: { source: SheetSource | null }) {
     const sheet = sheetRef.current
     if (!source || !sheet) return
     let stale = false
+    // Render into a hidden, laid-out element and swap it in only if still current, so renders never mix.
+    const staging = document.createElement('div')
+    staging.style.cssText = 'position: absolute; left: -100000px; top: 0;'
     const timer = setTimeout(async () => {
+      document.body.append(staging)
       try {
         const bytes = source.values ? fillTemplate(source.bytes, source.values) : source.bytes
-        const sections = await renderDocx(bytes, sheet)
+        const sections = await renderDocx(bytes, staging)
         if (stale) return
-        setError(null)
         setSectionWidth(sections[0]?.offsetWidth ?? 0)
+        sheet.replaceChildren(...staging.childNodes)
+        setError(null)
       } catch (e) {
         if (stale) return
         sheet.replaceChildren()
         setError(`Не удалось показать документ: ${e instanceof Error ? e.message : String(e)}`)
+      } finally {
+        staging.remove()
       }
     }, RENDER_DELAY_MS)
     return () => {
       stale = true
       clearTimeout(timer)
+      staging.remove()
     }
   }, [source])
 

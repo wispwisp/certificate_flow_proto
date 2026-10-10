@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { autoMap, type CsvTable, type Mapping } from '../core/csv'
 import { DEFAULT_PATTERN } from '../core/fileName'
 import { listTemplates, type TemplateRecord } from '../core/storage'
@@ -51,6 +51,15 @@ export default function App() {
 
   const canOpen = { 1: true, 2: selected !== null, 3: selected !== null && (mode === 'single' || csv !== null) }
 
+  // Memoized: Sheet re-renders the document whenever the source changes identity.
+  const uploadBytes = upload?.bytes
+  const source = useMemo(
+    () => uploadBytes
+      ? { bytes: uploadBytes, values: null }
+      : selected ? { bytes: selected.bytes, values: step === 1 ? null : formValues } : null,
+    [uploadBytes, selected, step, formValues],
+  )
+
   if (showHelp) {
     return (
       <div className="app">
@@ -59,10 +68,6 @@ export default function App() {
       </div>
     )
   }
-
-  const source = upload?.bytes
-    ? { bytes: upload.bytes, values: null }
-    : selected ? { bytes: selected.bytes, values: step === 1 ? null : formValues } : null
 
   return (
     <div className="app">
