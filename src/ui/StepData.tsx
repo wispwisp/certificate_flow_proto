@@ -1,4 +1,5 @@
 import type { Mapping } from '../core/csv'
+import { fieldLabel, ownValue } from '../core/fields'
 import type { TemplateRecord } from '../core/storage'
 import type { CsvState } from './App'
 import DropZone from './DropZone'
@@ -27,8 +28,8 @@ export default function StepData(props: Props) {
     <FieldInput
       key={field}
       field={field}
-      label={template.labels[field]}
-      value={formValues[field] ?? ''}
+      label={fieldLabel(template.labels, field)}
+      value={ownValue(formValues, field) ?? ''}
       optional={template.optional.includes(field)}
       onChange={(value) => props.onValue(field, value)}
     />
@@ -68,7 +69,7 @@ export default function StepData(props: Props) {
               <h3>Столбцы</h3>
               {template.fields.map((field) => (
                 <label key={field} className="field">
-                  {template.labels[field]}
+                  {fieldLabel(template.labels, field)}
                   <select value={mapping[field] ?? ''} onChange={(e) => props.onMap(field, e.target.value || null)}>
                     <option value="">— общее значение —</option>
                     {csv.table.columns.map((c) => <option key={c} value={c}>{c}</option>)}

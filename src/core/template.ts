@@ -1,5 +1,6 @@
 import Docxtemplater from 'docxtemplater'
 import PizZip from 'pizzip'
+import { ownValue } from './fields'
 import { checkZip } from './zipGuard'
 
 export type TemplateInspection = { fields: string[]; warnings: string[]; errors: string[] }
@@ -8,7 +9,7 @@ const OPTIONS = {
   delimiters: { start: '{{', end: '}}' },
   paragraphLoop: true,
   linebreaks: true,
-  parser: (tag: string) => ({ get: (scope: Record<string, string>) => scope[tag.trim()] }),
+  parser: (tag: string) => ({ get: (scope: Record<string, string>) => ownValue(scope, tag.trim()) }),
   nullGetter: () => '',
 }
 

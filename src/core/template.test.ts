@@ -56,4 +56,10 @@ describe('template', () => {
     expect(r.fields).toEqual([])
     expect(r.errors).toHaveLength(1)
   })
+  it('discovers and fills a constructor field like any other', () => {
+    const docx = makeDocx({ body: ['[{{ constructor }}]'] })
+    expect(inspectTemplate(docx).fields).toEqual(['constructor'])
+    expect(docXml(fillTemplate(docx, {}))).toContain('[]')
+    expect(docXml(fillTemplate(docx, { constructor: 'X' }))).toContain('[X]')
+  })
 })

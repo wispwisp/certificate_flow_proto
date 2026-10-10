@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultLabel, isDateField, normalizeDate, prepareValues } from './fields'
+import { defaultLabel, fieldLabel, isDateField, normalizeDate, prepareValues } from './fields'
 
 const settings = {
   fields: ['student_full_name', 'birth_date', 'group_name', 'note'],
@@ -37,5 +37,19 @@ describe('fields', () => {
     const bad = prepareValues(settings, { student_full_name: 'Ким', birth_date: '27/11/2007', group_name: 'РПО-241' })
     expect(bad.problems).toEqual(['Дата рождения: непонятный формат «27/11/2007», нужно ДД.ММ.ГГГГ'])
     expect(bad.values.birth_date).toBe('27/11/2007')
+  })
+  it('falls back to the default label when a label is cleared', () => {
+    const cleared = { ...settings, labels: { ...settings.labels, student_full_name: ' ', birth_date: '' } }
+    expect(fieldLabel(cleared.labels, 'student_full_name')).toBe('ФИО слушателя')
+    expect(fieldLabel(cleared.labels, 'group_name')).toBe('Группа')
+    expect(fieldLabel({}, 'custom_field')).toBe('custom_field')
+    expect(prepareValues(cleared, {}).problems).toEqual(['Не заполнено: ФИО слушателя, Дата рождения, Группа'])
+  })
+  it('treats Object.prototype names such as constructor as ordinary fields', () => {
+    expect(defaultLabel('constructor')).toBe('constructor')
+    expect(fieldLabel({}, 'constructor')).toBe('constructor')
+    const s = { fields: ['constructor', 'toString'], labels: {}, optional: [] }
+    expect(prepareValues(s, {})).toEqual({ values: { constructor: '', toString: '' }, problems: ['Не заполнено: constructor, toString'] })
+    expect(prepareValues(s, { constructor: ' x ', toString: 'y' }).values).toEqual({ constructor: 'x', toString: 'y' })
   })
 })

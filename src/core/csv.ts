@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import { prepareValues, type FieldSettings } from './fields'
+import { ownValue, prepareValues, type FieldSettings } from './fields'
 
 export type CsvTable = { columns: string[]; rows: string[][] }
 export type Mapping = Record<string, string | null>
@@ -38,7 +38,7 @@ export function buildRows(
     const raw: Record<string, string> = {}
     for (const field of settings.fields) {
       const column = mapping[field]
-      raw[field] = column == null ? (shared[field] ?? '') : (cells[table.columns.indexOf(column)] ?? '')
+      raw[field] = column == null ? (ownValue(shared, field) ?? '') : (cells[table.columns.indexOf(column)] ?? '')
     }
     const { values, problems } = prepareValues(settings, raw)
     return { number: i + 1, values, problems }

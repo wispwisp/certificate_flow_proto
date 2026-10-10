@@ -20,4 +20,6 @@ describe('fileName', () => {
   })
   it('de-duplicates names case-insensitively', () =>
     expect(uniqueNames(['a.pdf', 'A.pdf', 'a.pdf', 'b.pdf'])).toEqual(['a.pdf', 'A (2).pdf', 'a (3).pdf', 'b.pdf']))
+  it('treats Object.prototype names as unknown values', () =>
+    expect(fileNameFor('{constructor}_{toString}', {}, '.pdf')).toBe('_.pdf'))
 })

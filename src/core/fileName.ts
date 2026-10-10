@@ -1,3 +1,5 @@
+import { ownValue } from './fields'
+
 export const DEFAULT_PATTERN = '{cert_number}_{student_full_name}.pdf'
 
 export function sanitizeFileName(name: string): string {
@@ -18,7 +20,7 @@ export function unknownPlaceholders(pattern: string, fields: string[]): string[]
 }
 
 export function fileNameFor(pattern: string, values: Record<string, string>, ext: '.pdf' | '.docx'): string {
-  const base = pattern.replace(/\.pdf$/i, '').replace(PLACEHOLDER, (_, name) => values[name] ?? '')
+  const base = pattern.replace(/\.pdf$/i, '').replace(PLACEHOLDER, (_, name) => ownValue(values, name) ?? '')
   return sanitizeFileName(base) + ext
 }
 

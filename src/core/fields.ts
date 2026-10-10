@@ -19,8 +19,18 @@ export const FIELD_LABELS: Record<string, string> = {
 
 export type FieldSettings = { fields: string[]; labels: Record<string, string>; optional: string[] }
 
+/** Reads a user-chosen key without falling through to Object.prototype (`constructor`, `toString`, …). */
+export function ownValue(record: Record<string, string>, key: string): string | undefined {
+  return Object.hasOwn(record, key) ? record[key] : undefined
+}
+
 export function defaultLabel(field: string): string {
-  return FIELD_LABELS[field] ?? field
+  return ownValue(FIELD_LABELS, field) ?? field
+}
+
+/** The template's label for the field, or the default one when it was cleared. */
+export function fieldLabel(labels: Record<string, string>, field: string): string {
+  return ownValue(labels, field)?.trim() || defaultLabel(field)
 }
 
 export function isDateField(field: string): boolean {
@@ -49,8 +59,8 @@ export function prepareValues(
   const empty: string[] = []
   const badDates: string[] = []
   for (const field of settings.fields) {
-    const value = (raw[field] ?? '').trim()
-    const label = settings.labels[field]
+    const value = (ownValue(raw, field) ?? '').trim()
+    const label = fieldLabel(settings.labels, field)
     values[field] = value
     if (value === '') {
       if (!settings.optional.includes(field)) empty.push(label)

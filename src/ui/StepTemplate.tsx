@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { defaultLabel, isDateField } from '../core/fields'
+import { defaultLabel, fieldLabel, isDateField, ownValue } from '../core/fields'
 import type { TemplateRecord } from '../core/storage'
 import DropZone from './DropZone'
 import { plural } from './plural'
@@ -175,10 +175,10 @@ function FieldSettings({ template, onUpdate, onSetDefault }: SettingsProps) {
             />
           </label>
           <label className="field">
-            Значение по умолчанию ({template.labels[field]})
+            Значение по умолчанию ({fieldLabel(template.labels, field)})
             <input
               type={isDateField(field) ? 'date' : 'text'}
-              value={template.defaults[field] ?? ''}
+              value={ownValue(template.defaults, field) ?? ''}
               onChange={(e) => {
                 save({ defaults: { ...template.defaults, [field]: e.target.value } })
                 onSetDefault(field, e.target.value)

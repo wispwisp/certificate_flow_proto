@@ -60,3 +60,8 @@ it('normalizes CSV dates and flags unknown formats', () => {
   expect(rows[0].values.birth_date).toBe('14.03.2008')
   expect(rows[1].problems).toEqual(['Дата рождения: непонятный формат «14/03/2008», нужно ДД.ММ.ГГГГ'])
 })
+it('an unmapped constructor field without a shared value is empty, not a function', () => {
+  const s = { fields: ['constructor'], labels: { constructor: 'constructor' }, optional: [] }
+  const rows = buildRows({ columns: ['a'], rows: [['1']] }, { constructor: null }, {}, s)
+  expect(rows[0]).toEqual({ number: 1, values: { constructor: '' }, problems: ['Не заполнено: constructor'] })
+})
