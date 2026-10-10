@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { generateMergedPdf, generateZip, type BatchItem } from '../core/batch'
 import type { CsvRow, Mapping } from '../core/csv'
 import { fileNameFor, sanitizeFileName, uniqueNames, unknownPlaceholders } from '../core/fileName'
@@ -32,6 +32,9 @@ export default function StepDocuments(props: Props) {
   const controller = useRef<AbortController | null>(null)
   const running = progress !== null
 
+  // Leaving step 3 by any route unmounts the panel: stop the run so it never downloads old data.
+  useEffect(() => () => controller.current?.abort(), [])
+
   const single = prepareValues(template, props.formValues)
   const validRows = rows?.filter((r) => r.problems.length === 0) ?? []
   const unknown = unknownPlaceholders(pattern, template.fields)
@@ -62,8 +65,12 @@ export default function StepDocuments(props: Props) {
     })
 
   const downloadDocx = () => {
-    const bytes = fillTemplate(template.bytes, single.values) as Uint8Array<ArrayBuffer>
-    downloadBlob(new Blob([bytes], { type: DOCX_TYPE }), fileNameFor(pattern, single.values, '.docx'))
+    try {
+      const bytes = fillTemplate(template.bytes, single.values) as Uint8Array<ArrayBuffer>
+      downloadBlob(new Blob([bytes], { type: DOCX_TYPE }), fileNameFor(pattern, single.values, '.docx'))
+    } catch (e) {
+      setMessage({ text: `Не удалось сделать DOCX: ${e instanceof Error ? e.message : String(e)}`, error: true })
+    }
   }
 
   const batchItems = (): BatchItem[] => {
@@ -73,7 +80,8 @@ export default function StepDocuments(props: Props) {
 
   const downloadZip = () =>
     run(validRows.length, async (opts) => {
-      const date = new Date().toISOString().slice(0, 10)
+      const now = new Date()
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       return [await generateZip(batchItems(), rasterPdfEngine, opts), sanitizeFileName(`${template.name} — ${date}`) + '.zip']
     })
 
@@ -94,7 +102,7 @@ export default function StepDocuments(props: Props) {
 
       {mode === 'single' && (
         <>
-          {single.problems.length > 0 && <p className="message warning">Не заполнено: {single.problems.join('; ')}</p>}
+          {single.problems.length > 0 && <p className="message warning">{single.problems.join('; ')}</p>}
           <div className="actions">
             <button className="primary" disabled={single.problems.length > 0 || running} onClick={downloadPdf}>Скачать PDF</button>
             <button disabled={single.problems.length > 0 || running} onClick={downloadDocx}>Скачать DOCX</button>
@@ -146,7 +154,7 @@ export default function StepDocuments(props: Props) {
       </p>
 
       <div className="actions nav">
-        <button onClick={props.onBack}>← Назад</button>
+        <button disabled={running} onClick={props.onBack}>← Назад</button>
       </div>
     </div>
   )
