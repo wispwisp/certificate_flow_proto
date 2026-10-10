@@ -4,7 +4,7 @@ import JSZip from 'jszip'
 
 test.setTimeout(120_000)
 
-test('demo group: 7 one-page PDFs, row 8 invalid, Tinos only, no requests after load', async ({ page }) => {
+test('demo group: 7 one-page PDFs, row 8 invalid, Tinos only, no requests after load', async ({ page, browserName }) => {
   const errors: string[] = []
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()) })
   page.on('pageerror', (e) => errors.push(String(e)))
@@ -40,6 +40,11 @@ test('demo group: 7 one-page PDFs, row 8 invalid, Tinos only, no requests after 
   const sheet = page.getByTestId('sheet')
   await expect(sheet).toContainText('Сейтқали Әлихан Ерланұлы')
   await page.evaluate(() => document.fonts.ready)
+  if (browserName === 'chromium') {
+    // Printing the one document on the sheet gives exactly one page, with no blank page after it.
+    // A4 is the template's paper; the default Letter is shorter than an A4 page and would split it.
+    expect(pageCount(await page.pdf({ preferCSSPageSize: true, format: 'A4' }))).toBe(1)
+  }
   await sheet.locator('span').filter({ hasText: 'Сейтқали' }).last().evaluate((el) => el.setAttribute('data-kz', ''))
   const cdp = await page.context().newCDPSession(page)
   await cdp.send('DOM.enable'); await cdp.send('CSS.enable')

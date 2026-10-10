@@ -4,6 +4,7 @@
   --line: #d9d5cc;
   --accent: #2b5fa8;
   --desk: #e7e3dc;
+  --paper-shadow: 0 2px 4px rgb(0 0 0 / 12%), 0 8px 24px rgb(0 0 0 / 14%);
 }
 
 * {
@@ -103,8 +104,6 @@ button {
 .sheet {
   width: fit-content;
   margin: 0 auto;
-  background: #fff;
-  box-shadow: 0 2px 4px rgb(0 0 0 / 12%), 0 8px 24px rgb(0 0 0 / 14%);
 }
 
 /* docx-preview paints its own grey backdrop and padding around the pages; the desk already provides them. */
@@ -115,7 +114,14 @@ button {
 
 .sheet .docx-wrapper > section.docx {
   margin: 0;
-  box-shadow: none;
+  box-shadow: var(--paper-shadow);
+}
+
+/* Separate pages of a multi-page document on screen; print breaks the page instead. */
+@media screen {
+  .sheet .docx-wrapper > section.docx:not(:last-child) {
+    margin-bottom: 24px;
+  }
 }
 
 .sheet.blank {
@@ -128,6 +134,8 @@ button {
   padding: 48px;
   text-align: center;
   color: var(--muted);
+  background: #fff;
+  box-shadow: var(--paper-shadow);
 }
 
 .sheet-error {
@@ -390,6 +398,10 @@ button.next {
   .sheet .docx-wrapper > section.docx {
     margin: 0;
     box-shadow: none;
+  }
+
+  /* Not after the last one: a page-tall last section would otherwise print a blank trailing page. */
+  .sheet .docx-wrapper > section.docx:not(:last-child) {
     break-after: page;
   }
 }
