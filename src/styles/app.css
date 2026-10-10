@@ -310,3 +310,21 @@ button.next {
   padding-left: 20px;
   font-size: 14px;
 }
+
+.modes {
+  display: flex;
+  gap: 16px;
+}
+
+.step-data h3 {
+  margin: 4px 0 0;
+  font-size: 16px;
+}
+
+.step-data select {
+  padding: 5px;
+}
+
+.nav {
+  justify-content: space-between;
+}

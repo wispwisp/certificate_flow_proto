@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { autoMap, decodeCsv, parseCsv, type CsvTable, type Mapping } from '../core/csv'
+import { autoMap, buildRows, decodeCsv, parseCsv, type CsvTable, type Mapping } from '../core/csv'
 import { createDemoTemplate, demoCsvBytes } from '../core/demo'
 import { DEFAULT_PATTERN } from '../core/fileName'
+import { prepareValues } from '../core/fields'
 import { deleteTemplate, listTemplates, newTemplateRecord, putTemplate, type TemplateRecord } from '../core/storage'
 import { inspectTemplate, type TemplateInspection } from '../core/template'
 import { checkZip, uploadSizeError } from '../core/zipGuard'
 import Header, { type Step } from './Header'
 import HowTo from './HowTo'
 import Sheet from './Sheet'
+import StepData from './StepData'
 import StepTemplate from './StepTemplate'
 
 // `canPreview`: the file passed the ZIP guard, so the sheet may render it (tag errors included).
@@ -118,6 +120,16 @@ export default function App() {
     }
   }
 
+  const uploadCsvFile = async (file: File) => {
+    const tooBig = uploadSizeError(file.size)
+    if (tooBig) return setCsvError(tooBig)
+    try {
+      loadCsvBytes(new Uint8Array(await file.arrayBuffer()), file.name)
+    } catch {
+      setCsvError('Не удалось прочитать файл. Попробуйте выбрать его ещё раз.')
+    }
+  }
+
   const startDemo = async () => {
     const record = await addDemoTemplate()
     loadCsvBytes(demoCsvBytes(), 'students_demo.csv', record)
@@ -125,20 +137,26 @@ export default function App() {
     setStep(1)
   }
 
-  // Read by steps ② and ③ (Tasks 8-9); referenced here so strict unused checks pass until then.
-  void [csvError, mapping, pattern, setPattern, previewRow]
+  // Read by step ③ (Task 9); referenced here so strict unused checks pass until then.
+  void [pattern, setPattern]
 
   const canOpen = { 1: true, 2: selected !== null, 3: selected !== null && (mode === 'single' || csv !== null) }
 
   // Memoized: Sheet re-renders the document whenever the source changes identity.
   const uploadBytes = upload?.canPreview ? upload.bytes : undefined
   const reviewing = upload?.inspection !== undefined
-  const source = useMemo(
-    () => reviewing
-      ? uploadBytes ? { bytes: uploadBytes, values: null } : null
-      : selected ? { bytes: selected.bytes, values: step === 1 ? null : formValues } : null,
-    [reviewing, uploadBytes, selected, step, formValues],
+  const rows = useMemo(
+    () => (selected && csv ? buildRows(csv.table, mapping, formValues, selected) : null),
+    [selected, csv, mapping, formValues],
   )
+  const source = useMemo(() => {
+    if (reviewing) return uploadBytes ? { bytes: uploadBytes, values: null } : null
+    if (!selected) return null
+    const raw = { bytes: selected.bytes, values: null }
+    if (step === 1) return raw
+    if (mode === 'single') return { bytes: selected.bytes, values: prepareValues(selected, formValues).values }
+    return rows ? { bytes: selected.bytes, values: rows[previewRow]?.values ?? null } : raw
+  }, [reviewing, uploadBytes, selected, step, mode, formValues, rows, previewRow])
 
   if (showHelp) {
     return (
@@ -169,6 +187,22 @@ export default function App() {
               onStartDemo={startDemo}
               onSetDefault={(field, value) => setFormValues((v) => ({ ...v, [field]: value }))}
               onNext={() => setStep(2)}
+            />
+          ) : step === 2 && selected ? (
+            <StepData
+              template={selected}
+              mode={mode}
+              formValues={formValues}
+              csv={csv}
+              csvError={csvError}
+              mapping={mapping}
+              onMode={setMode}
+              onValue={(field, value) => setFormValues((v) => ({ ...v, [field]: value }))}
+              onCsvFile={uploadCsvFile}
+              onDemoCsv={() => loadCsvBytes(demoCsvBytes(), 'students_demo.csv')}
+              onMap={(field, column) => setMapping((m) => ({ ...m, [field]: column }))}
+              onBack={() => setStep(1)}
+              onNext={() => setStep(3)}
             />
           ) : (
             <StepPanel step={step} />
