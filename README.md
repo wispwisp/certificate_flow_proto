@@ -6,13 +6,15 @@ or one merged PDF. Everything runs in the browser; no data leaves the computer. 
 
 ## Run locally
 
+Requires Node 22.
+
 ```
 npm ci
 npm run dev        # http://localhost:5173
 npm test           # unit tests (Vitest)
 npm run build      # production build into dist/
-npx playwright install chromium
-npm run test:e2e   # end-to-end test against the production build served from a subpath
+npx playwright install chromium firefox
+npm run test:e2e   # end-to-end test in Chromium and Firefox against the production build served from a subpath
 ```
 
 `npm run serve:subpath` serves `dist/` at http://localhost:4173/certificate_flow_proto/, the way GitHub Pages does.
@@ -31,10 +33,12 @@ Pages. One-time setup: Settings → Pages → Source = GitHub Actions.
   document as text.
 - A field whose name ends in `_date` (for example `issue_date`) gets a date picker and is written as `DD.MM.YYYY`.
   Every other field is a text input.
-- For a group, give the CSV columns the same names as the fields.
+- For a group, give the CSV columns the same names as the fields. The CSV may be encoded as UTF-8 or Windows-1251
+  and separated by `;` or `,`. Dates may be written as `DD.MM.YYYY`, `D.M.YYYY` or `YYYY-MM-DD`.
 
 ## Known limitations
 
+- Templates are kept in this browser's storage on this computer only; clearing the site data deletes them.
 - The PDF is a raster image of each page (about 450 KB per page); its text is not selectable. The Print button goes
   through the browser's print dialog and keeps real text.
 - The preview draws a double paragraph border as a single line, and header/footer positions differ from LibreOffice
