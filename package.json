@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "serve:subpath": "node scripts/serve-subpath.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource/arimo": "5.3",
