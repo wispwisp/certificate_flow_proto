@@ -3,6 +3,7 @@ import { generateMergedPdf, generateZip, type BatchItem } from '../core/batch'
 import type { CsvRow, Mapping } from '../core/csv'
 import { fileNameFor, sanitizeFileName, uniqueNames, unknownPlaceholders } from '../core/fileName'
 import { prepareValues } from '../core/fields'
+import type { PdfEngine } from '../core/pdf/engine'
 import { rasterPdfEngine } from '../core/pdf/raster'
 import type { TemplateRecord } from '../core/storage'
 import { fillTemplate } from '../core/template'
@@ -22,6 +23,9 @@ type Props = {
 }
 
 const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+// The one place to swap in another engine, e.g. a server-side converter.
+const engine: PdfEngine = rasterPdfEngine
 
 type Progress = { done: number; total: number }
 
@@ -60,7 +64,7 @@ export default function StepDocuments(props: Props) {
 
   const downloadPdf = () =>
     run(1, async ({ signal }) => {
-      const pdf = await rasterPdfEngine.render([fillTemplate(template.bytes, single.values)], { signal })
+      const pdf = await engine.render([fillTemplate(template.bytes, single.values)], { signal })
       return [pdf, fileNameFor(pattern, single.values, '.pdf')]
     })
 
@@ -82,12 +86,12 @@ export default function StepDocuments(props: Props) {
     run(validRows.length, async (opts) => {
       const now = new Date()
       const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-      return [await generateZip(batchItems(), rasterPdfEngine, opts), sanitizeFileName(`${template.name} — ${date}`) + '.zip']
+      return [await generateZip(batchItems(), engine, opts), sanitizeFileName(`${template.name} — ${date}`) + '.zip']
     })
 
   const downloadMerged = () =>
     run(validRows.length, async (opts) => [
-      await generateMergedPdf(batchItems(), rasterPdfEngine, opts),
+      await generateMergedPdf(batchItems(), engine, opts),
       sanitizeFileName(`${template.name} — все документы`) + '.pdf',
     ])
 
