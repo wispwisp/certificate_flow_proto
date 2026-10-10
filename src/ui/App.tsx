@@ -138,17 +138,22 @@ export default function App() {
     setStep(1)
   }
 
-  const canOpen = { 1: true, 2: selected !== null, 3: selected !== null && (mode === 'single' || csv !== null) }
+  // An upload under review must be saved or cancelled before leaving step 1.
+  const reviewing = upload?.inspection !== undefined
+  const canOpen = {
+    1: true,
+    2: selected !== null && !reviewing,
+    3: selected !== null && !reviewing && (mode === 'single' || csv !== null),
+  }
 
   // Memoized: Sheet re-renders the document whenever the source changes identity.
   const uploadBytes = upload?.canPreview ? upload.bytes : undefined
-  const reviewing = upload?.inspection !== undefined
   const rows = useMemo(
     () => (selected && csv ? buildRows(csv.table, mapping, formValues, selected) : null),
     [selected, csv, mapping, formValues],
   )
   const source = useMemo(() => {
-    if (reviewing) return uploadBytes ? { bytes: uploadBytes, values: null } : null
+    if (reviewing && step === 1) return uploadBytes ? { bytes: uploadBytes, values: null } : null
     if (!selected) return null
     const raw = { bytes: selected.bytes, values: null }
     if (step === 1) return raw

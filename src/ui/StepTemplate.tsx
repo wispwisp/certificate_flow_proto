@@ -75,7 +75,8 @@ export default function StepTemplate(props: Props) {
 
       {selected && !upload?.inspection && <FieldSettings template={selected} onUpdate={props.onUpdate} onSetDefault={props.onSetDefault} />}
 
-      <button className="primary next" disabled={!selected} onClick={props.onNext}>Далее →</button>
+      {upload?.inspection && <p className="hint">Сохраните шаблон в библиотеку или нажмите «Отмена»</p>}
+      <button className="primary next" disabled={!selected || !!upload?.inspection} onClick={props.onNext}>Далее →</button>
     </div>
   )
 }
