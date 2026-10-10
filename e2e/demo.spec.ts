@@ -33,6 +33,7 @@ test('demo group: 7 one-page PDFs, row 8 invalid, Tinos only, no requests after 
     const bytes = await f.async('nodebuffer')
     expect(bytes.subarray(0, 4).toString('latin1')).toBe('%PDF')
     expect(pageCount(bytes)).toBe(1)
+    expect(bytes.length).toBeGreaterThan(100_000) // a real page is about 450 KB; a blank capture is far smaller
   }
   expect(pageCount(await readDownload(/Скачать один PDF для печати/))).toBe(7)
 
@@ -40,18 +41,18 @@ test('demo group: 7 one-page PDFs, row 8 invalid, Tinos only, no requests after 
   const sheet = page.getByTestId('sheet')
   await expect(sheet).toContainText('Сейтқали Әлихан Ерланұлы')
   await page.evaluate(() => document.fonts.ready)
-  if (browserName === 'chromium') {
+  if (browserName === 'chromium') { // page.pdf and CDP are Chromium-only
     // Printing the one document on the sheet gives exactly one page, with no blank page after it.
     // A4 is the template's paper; the default Letter is shorter than an A4 page and would split it.
     expect(pageCount(await page.pdf({ preferCSSPageSize: true, format: 'A4' }))).toBe(1)
+    await sheet.locator('span').filter({ hasText: 'Сейтқали' }).last().evaluate((el) => el.setAttribute('data-kz', ''))
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('DOM.enable'); await cdp.send('CSS.enable')
+    const { root } = await cdp.send('DOM.getDocument', { depth: -1 })
+    const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: '[data-kz]' })
+    const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
+    expect(new Set(fonts.map((f) => f.familyName))).toEqual(new Set(['Tinos']))
   }
-  await sheet.locator('span').filter({ hasText: 'Сейтқали' }).last().evaluate((el) => el.setAttribute('data-kz', ''))
-  const cdp = await page.context().newCDPSession(page)
-  await cdp.send('DOM.enable'); await cdp.send('CSS.enable')
-  const { root } = await cdp.send('DOM.getDocument', { depth: -1 })
-  const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: '[data-kz]' })
-  const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
-  expect(new Set(fonts.map((f) => f.familyName))).toEqual(new Set(['Tinos']))
 
   expect(requests).toEqual([])
   expect(errors).toEqual([])
